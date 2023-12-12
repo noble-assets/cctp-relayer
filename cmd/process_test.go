@@ -229,3 +229,30 @@ func TestBatchTx(t *testing.T) {
 	require.Equal(t, 2, len(actualState))
 	p.Mu.RUnlock()
 }
+
+// created message -> not \ -> filtered
+func TestProcessNonBurnMessageWhenDisabled(t *testing.T) {
+	setupTest()
+
+	go cmd.StartProcessor(cfg, logger, processingQueue, sequenceMap)
+
+	emptyBz := make([]byte, 32)
+	expectedState := &types.MessageState{
+		SourceTxHash:      "123",
+		Type:              "",
+		IrisLookupId:      "a404f4155166a1fc7ffee145b5cac6d0f798333745289ab1db171344e226ef0c",
+		Status:            types.Created,
+		SourceDomain:      0,
+		DestDomain:        4,
+		DestinationCaller: emptyBz,
+	}
+
+	processingQueue <- expectedState
+
+	time.Sleep(2 * time.Second)
+
+	actualState, ok := cmd.State.Load(cmd.LookupKey(expectedState.SourceTxHash, expectedState.Type))
+	require.True(t, ok)
+	require.Equal(t, types.Filtered, actualState.Status)
+
+}

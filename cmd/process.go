@@ -138,7 +138,8 @@ func (p *Processor) StartProcessor(cfg config.Config, logger log.Logger, process
 		// if a filter's condition is met, mark as filtered
 		if filterDisabledCCTPRoutes(cfg, logger, msg[batchPosition]) ||
 			filterInvalidDestinationCallers(cfg, logger, msg[batchPosition]) ||
-			filterNonWhitelistedChannels(cfg, logger, msg[batchPosition]) {
+			filterNonWhitelistedChannels(cfg, logger, msg[batchPosition]) ||
+			filterMessages(cfg, logger, msg[batchPosition]) {
 			p.Mu.Lock()
 			msg[batchPosition].Status = types.Filtered
 			p.Mu.Unlock()
@@ -279,6 +280,19 @@ func filterNonWhitelistedChannels(cfg config.Config, logger log.Logger, msg *typ
 	logger.Info(fmt.Sprintf("Filtered tx %s because channel whitelisting is enabled and the tx's channel is not in the whitelist: %s",
 		msg.SourceTxHash, msg.Channel))
 	return true
+}
+
+// filterMessages filters out non-burn messages.  It returns true if the message is not a burn.
+func filterMessages(_ config.Config, logger log.Logger, msg *types.MessageState) bool {
+	result := msg.Type != types.Mint
+	if result {
+		logger.Info(fmt.Sprintf("Filtered tx %s because it's a not a burn", msg.SourceTxHash))
+	}
+	return result
+}
+
+func LookupKey(sourceTxHash string, messageType string) string {
+	return fmt.Sprintf("%s-%s", sourceTxHash, messageType)
 }
 
 func init() {

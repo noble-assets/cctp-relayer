@@ -47,7 +47,6 @@ type MessageState struct {
 
 // EvmLogToMessageState transforms an evm log into a messageState given an ABI
 func EvmLogToMessageState(abi abi.ABI, messageSent abi.Event, log *ethtypes.Log) (messageState *MessageState, err error) {
-
 	event := make(map[string]interface{})
 	_ = abi.UnpackIntoMap(event, messageSent.Name, log.Data)
 
@@ -59,7 +58,6 @@ func EvmLogToMessageState(abi abi.ABI, messageSent abi.Event, log *ethtypes.Log)
 
 	messageState = &MessageState{
 		IrisLookupId:      hashedHexStr,
-		Type:              Mint,
 		Status:            Created,
 		SourceDomain:      message.SourceDomain,
 		DestDomain:        message.DestinationDomain,
@@ -82,7 +80,7 @@ func EvmLogToMessageState(abi abi.ABI, messageSent abi.Event, log *ethtypes.Log)
 		return messageState, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("unable to parse txn into message.  tx hash %s", log.TxHash.Hex()))
+	return nil, errors.New(fmt.Sprintf("unable to parse tx into message, tx hash %s", log.TxHash.Hex()))
 }
 
 // NobleLogToMessageState transforms a Noble log into a messageState

@@ -1,32 +1,37 @@
 package noble
 
 import (
-	"cosmossdk.io/log"
 	"encoding/json"
 	"fmt"
-	"github.com/strangelove-ventures/noble-cctp-relayer/config"
-	"github.com/strangelove-ventures/noble-cctp-relayer/types"
 	"io"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"cosmossdk.io/log"
+	"github.com/strangelove-ventures/noble-cctp-relayer/config"
+	"github.com/strangelove-ventures/noble-cctp-relayer/types"
 )
 
 func StartListener(cfg config.Config, logger log.Logger, processingQueue chan *types.MessageState) {
 	// set up client
 
-	logger.Info(fmt.Sprintf("Starting Noble listener at block %d", cfg.Networks.Source.Noble.StartBlock))
+	logger.Info(fmt.Sprintf("Starting Noble listener at block %d looking back %d blocks",
+		cfg.Networks.Source.Noble.StartBlock,
+		cfg.Networks.Source.Noble.LookbackPeriod))
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	// enqueue block heights
 	currentBlock := cfg.Networks.Source.Noble.StartBlock
+	lookback := cfg.Networks.Source.Noble.LookbackPeriod
 	chainTip := GetNobleChainTip(cfg)
 	blockQueue := make(chan uint64, 1000000)
 
 	// history
+	currentBlock = currentBlock - lookback
 	for currentBlock <= chainTip {
 		blockQueue <- currentBlock
 		currentBlock++
@@ -51,7 +56,7 @@ func StartListener(cfg config.Config, logger log.Logger, processingQueue chan *t
 		go func() {
 			for {
 				block := <-blockQueue
-				rawResponse, err := http.Get(fmt.Sprintf("https://rpc.testnet.noble.strange.love/tx_search?query=\"tx.height=%d\"", block))
+				rawResponse, err := http.Get(fmt.Sprintf("%s/tx_search?query=\"tx.height=%d\"", cfg.Networks.Source.Noble.RPC, block))
 				if err != nil {
 					logger.Debug(fmt.Sprintf("unable to query Noble block %d", block))
 					continue
