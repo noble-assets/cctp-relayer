@@ -1,18 +1,20 @@
 package types
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/circlefin/noble-cctp/x/cctp/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"strconv"
-	"time"
 )
 
 const (
@@ -145,4 +147,21 @@ func DecodeDestinationCaller(input []byte) (string, error) {
 		return "", errors.New("unable to encode destination caller")
 	}
 	return output, nil
+}
+
+// Equal checks if two MessageState instances are equal
+func (m *MessageState) Equal(other *MessageState) bool {
+	return (m.IrisLookupId == other.IrisLookupId &&
+		m.Type == other.Type &&
+		m.Status == other.Status &&
+		m.Attestation == other.Attestation &&
+		m.SourceDomain == other.SourceDomain &&
+		m.DestDomain == other.DestDomain &&
+		m.SourceTxHash == other.SourceTxHash &&
+		m.DestTxHash == other.DestTxHash &&
+		bytes.Equal(m.MsgSentBytes, other.MsgSentBytes) &&
+		bytes.Equal(m.DestinationCaller, other.DestinationCaller) &&
+		m.Channel == other.Channel &&
+		m.Created == other.Created &&
+		m.Updated == other.Updated)
 }

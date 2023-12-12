@@ -2,6 +2,10 @@ package integration_testing
 
 import (
 	"fmt"
+	"math/big"
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -12,14 +16,13 @@ import (
 	eth "github.com/strangelove-ventures/noble-cctp-relayer/cmd/ethereum"
 	"github.com/strangelove-ventures/noble-cctp-relayer/types"
 	"github.com/stretchr/testify/require"
-	"math/big"
-	"testing"
-	"time"
 )
 
 // TestEthBurnToNobleMintAndForward generates a depositForBurn on Ethereum Goerli and mints + forwards on Noble
 func TestEthBurnToNobleMintAndForward(t *testing.T) {
 	setupTest()
+
+	p := cmd.NewProcessor()
 
 	// start up relayer
 	cfg.Networks.Source.Ethereum.StartBlock = getEthereumLatestBlockHeight(t)
@@ -28,7 +31,7 @@ func TestEthBurnToNobleMintAndForward(t *testing.T) {
 	fmt.Println("Starting relayer...")
 	processingQueue := make(chan *types.MessageState, 10)
 	go eth.StartListener(cfg, logger, processingQueue)
-	go cmd.StartProcessor(cfg, logger, processingQueue, sequenceMap)
+	go p.StartProcessor(cfg, logger, processingQueue, sequenceMap)
 
 	fmt.Println("Building Ethereum depositForBurnWithMetadata txn...")
 	_, _, cosmosAddress := testdata.KeyTestPubAddr()
