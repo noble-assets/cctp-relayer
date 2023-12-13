@@ -102,7 +102,6 @@ func (p *Processor) StartProcessor(cfg config.Config, logger log.Logger, process
 
 		var batchPosition int
 		// if this is the first time seeing this tx hash, add the message to State
-		// msg, ok := State.Load(LookupKey(dequeuedMsg.SourceTxHash, dequeuedMsg.Type, sha256.Sum256(dequeuedMsg.MsgSentBytes)))
 		msg, ok := State.Load(dequeuedMsg.SourceTxHash)
 		if !ok {
 			batchPosition = 0
